@@ -27,16 +27,19 @@ pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Re
         base_dir.as_ref().join(path)
     };
 
-    let joined_str = joined.to_str().ok_or_else(|| {
-        Error::new(
-            ErrorKind::Other,
-            format!("Path {} cannot be converted to string", joined.display()),
-        )
-    })?;
+    clean_helper(&joined)
+}
 
-    let cleaned = clean(joined_str);
-
-    Ok(PathBuf::from(cleaned))
+fn clean_helper(path: &Path) -> Result<PathBuf> {
+    path.to_str()
+        .ok_or_else(|| {
+            Error::new(
+                ErrorKind::Other,
+                format!("Path {} cannot be converted to string", path.display()),
+            )
+        })
+        .map(clean)
+        .map(PathBuf::from)
 }
 
 #[cfg(test)]
