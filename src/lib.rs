@@ -1,6 +1,6 @@
 use path_clean::clean;
 use std::io::{Error, ErrorKind, Result};
-use std::path::{Path, PathBuf, MAIN_SEPARATOR};
+use std::path::{Path, PathBuf};
 
 /// Normalize a target path to an absolute path relative to a base
 /// directory (typically the current working directory) without
@@ -14,6 +14,8 @@ pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Re
     fn normalize(path: &Path) -> Result<PathBuf> {
         #[cfg(target_os = "windows")]
         fn platform_clean(path: &str) -> String {
+            use std::path::MAIN_SEPARATOR;
+
             clean(&path.replace(MAIN_SEPARATOR, "/")).replace('/', &MAIN_SEPARATOR.to_string())
         }
         #[cfg(not(target_os = "windows"))]
