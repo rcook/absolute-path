@@ -1,3 +1,4 @@
+use path_clean::clean;
 use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 
@@ -20,11 +21,22 @@ pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Re
         ));
     }
 
-    if path.as_ref().components().count() == 0 {
-        return Ok(base_dir.as_ref().to_path_buf());
-    }
+    let joined = if path.as_ref().components().count() == 0 {
+        base_dir.as_ref().to_path_buf()
+    } else {
+        base_dir.as_ref().join(path)
+    };
 
-    Ok(base_dir.as_ref().join(path))
+    let joined_str = joined.to_str().ok_or_else(|| {
+        Error::new(
+            ErrorKind::Other,
+            format!("Path {} cannot be converted to string", joined.display()),
+        )
+    })?;
+
+    let cleaned = clean(joined_str);
+
+    Ok(PathBuf::from(cleaned))
 }
 
 #[cfg(test)]
@@ -40,6 +52,11 @@ mod tests {
     #[test]
     fn path_empty() {
         check_absolute_path(abs("/aa/bb/cc"), rel(""), "/aa/bb/cc", 3)
+    }
+
+    #[test]
+    fn base_dir_unnormalized_path_empty() {
+        check_absolute_path(abs("/aa/../bb/cc"), rel(""), "/bb/cc", 2)
     }
 
     #[test]
@@ -59,7 +76,17 @@ mod tests {
 
     #[test]
     fn path_multiple_components_absolute() {
-        check_absolute_path(abs("/aa/bb/cc"), rel("/dd/ee"), "/dd/ee", 2)
+        check_absolute_path(abs("/aa/bb/cc"), abs("/dd/ee"), "/dd/ee", 2)
+    }
+
+    #[test]
+    fn path_multiple_components_unnormalized() {
+        check_absolute_path(abs("/aa/bb/cc"), rel("dd/../ee"), "/aa/bb/cc/ee", 4)
+    }
+
+    #[test]
+    fn both_unnormalized() {
+        check_absolute_path(abs("/aa/bb/../cc"), rel("dd/../ee"), "/aa/cc/ee", 3)
     }
 
     mod asserts {
