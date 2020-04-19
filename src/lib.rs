@@ -144,4 +144,40 @@ mod tests {
             }
         }
     }
+
+    #[cfg(not(target_os = "windows"))]
+    pub mod platform_helpers {
+        use std::path::Component::*;
+        use std::path::{Path, PathBuf};
+
+        use super::helpers::TestPath::{self, *};
+
+        pub const OTHER_SEPARATOR: char = '\\';
+
+        pub fn from_test_path(test_path: TestPath) -> PathBuf {
+            let raw = match test_path {
+                Abs(s) => s,
+                Rel(s) => s,
+            };
+            PathBuf::from(raw)
+        }
+
+        pub fn path_component_count<P: AsRef<Path>>(path: P) -> Option<usize> {
+            let mut iter = path.as_ref().components();
+
+            match iter.next() {
+                Some(RootDir) => {}
+                _ => return None,
+            };
+
+            let mut n = 0;
+            loop {
+                match iter.next() {
+                    Some(Normal(_)) => n += 1,
+                    Some(_) => return None,
+                    None => return Some(n),
+                }
+            }
+        }
+    }
 }
