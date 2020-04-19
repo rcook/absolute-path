@@ -48,8 +48,18 @@ mod tests {
     }
 
     #[test]
+    fn path_single_component_absolute() {
+        check_absolute_path(abs("/aa/bb/cc"), abs("/dd"), "/dd", 1)
+    }
+
+    #[test]
     fn path_multiple_components_relative() {
         check_absolute_path(abs("/aa/bb/cc"), rel("dd/ee"), "/aa/bb/cc/dd/ee", 5)
+    }
+
+    #[test]
+    fn path_multiple_components_absolute() {
+        check_absolute_path(abs("/aa/bb/cc"), rel("/dd/ee"), "/dd/ee", 2)
     }
 
     mod asserts {
