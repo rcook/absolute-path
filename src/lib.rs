@@ -18,6 +18,7 @@ pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Re
 
             clean(&path.replace(MAIN_SEPARATOR, "/")).replace('/', &MAIN_SEPARATOR.to_string())
         }
+
         #[cfg(not(target_os = "windows"))]
         fn platform_clean(path: &str) -> String {
             clean(path)
