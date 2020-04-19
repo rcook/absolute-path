@@ -38,17 +38,17 @@ mod tests {
     }
 
     #[test]
-    fn relative_path_empty() {
+    fn path_empty() {
         check_absolute_path(abs("/aa/bb/cc"), rel(""), "/aa/bb/cc", 3)
     }
 
     #[test]
-    fn relative_path_single_component() {
+    fn path_single_component_relative() {
         check_absolute_path(abs("/aa/bb/cc"), rel("dd"), "/aa/bb/cc/dd", 4)
     }
 
     #[test]
-    fn relative_path_multiple_components() {
+    fn path_multiple_components_relative() {
         check_absolute_path(abs("/aa/bb/cc"), rel("dd/ee"), "/aa/bb/cc/dd/ee", 5)
     }
 
