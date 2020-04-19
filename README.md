@@ -1,7 +1,7 @@
 # absolute-path
 
-[![AppVeyor status for project](https://ci.appveyor.com/api/projects/status/XXX?svg=true)](https://ci.appveyor.com/project/rcook/absolute-path)
-[![AppVeyor status for master branch](https://ci.appveyor.com/api/projects/status/XXX/branch/master?svg=true)](https://ci.appveyor.com/project/rcook/absolute-path/branch/master)
+[![AppVeyor status for project](https://ci.appveyor.com/api/projects/status/bs817b2o4x944b2g?svg=true)](https://ci.appveyor.com/project/rcook/absolute-path)
+[![AppVeyor status for master branch](https://ci.appveyor.com/api/projects/status/bs817b2o4x944b2g/branch/master?svg=true)](https://ci.appveyor.com/project/rcook/absolute-path/branch/master)
 
 _Absolute paths in Rust_
 
