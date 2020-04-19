@@ -28,12 +28,12 @@ artifacts:
   - path: target/debug/debug-test.log
   - path: target/release/release-test.log
 
-deploy:
-  description: Official release from AppVeyor
-  artifact: zip
-  auth_token:
-    secure: KnsNe82iVYE0/gNPx55EdNiJ3q5rM9GKu+y8E/Fz5tCnybP3NZj0PEbLabX9wZzY
-  provider: GitHub
-  on:
-    branch: /v.+/
-    APPVEYOR_REPO_TAG: true
+#deploy:
+#  description: Official release from AppVeyor
+#  artifact: zip
+#  auth_token:
+#    secure: KnsNe82iVYE0/gNPx55EdNiJ3q5rM9GKu+y8E/Fz5tCnybP3NZj0PEbLabX9wZzY
+#  provider: GitHub
+#  on:
+#    branch: /v.+/
+#    APPVEYOR_REPO_TAG: true
