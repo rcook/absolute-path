@@ -1,3 +1,4 @@
+use std::io::{Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 
 /// Normalize a target path to an absolute path relative to a base
@@ -7,61 +8,140 @@ use std::path::{Path, PathBuf};
 /// # Arguments
 ///
 /// * `base_dir` - Base directory (must be absolute), typically the current working directory
-/// * `target_path` - Target path
-///
-/// # Examples
-///
-/// ```
-/// ```
-pub fn absolute_path<P0: AsRef<Path>, P1: AsRef<Path>>(
-    base_dir: P0,
-    path: P1,
-) -> std::io::Result<PathBuf> {
+/// * `path` - Path
+pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Result<PathBuf> {
     if !base_dir.as_ref().is_absolute() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
             format!(
                 "Base directory {} is not absolute",
                 base_dir.as_ref().display()
             ),
         ));
     }
+
+    if path.as_ref().components().count() == 0 {
+        return Ok(base_dir.as_ref().to_path_buf());
+    }
+
     Ok(base_dir.as_ref().join(path))
 }
 
 #[cfg(test)]
 mod tests {
-    use super::absolute_path;
-
-    use std::path::Path;
-
-    #[test]
-    fn nonabsolute_base_dir_fails() {
-        check_absolute_path_fails("aa/bb/cc", "")
-    }
+    use asserts::*;
+    use helpers::*;
 
     #[test]
-    fn normalized_base_dir_relative_path_empty() {
-        check_absolute_path("/aa/bb/cc", "", "/aa/bb/cc/")
+    fn fails_if_base_dir_not_absolute() {
+        check_absolute_path_fails(abs("aa/bb/cc"), rel(""))
     }
 
     #[test]
-    fn normalized_base_dir_relative_path_single_part() {
-        check_absolute_path("/aa/bb/cc", "dd", "/aa/bb/cc/dd")
+    fn relative_path_empty() {
+        check_absolute_path(abs("/aa/bb/cc"), rel(""), "/aa/bb/cc", 3)
     }
 
     #[test]
-    fn normalized_base_dir_relative_path_multiple_parts() {
-        check_absolute_path("/aa/bb/cc", "dd/ee", "/aa/bb/cc/dd/ee")
+    fn relative_path_single_component() {
+        check_absolute_path(abs("/aa/bb/cc"), rel("dd"), "/aa/bb/cc/dd", 4)
     }
 
-    fn check_absolute_path(p0: &str, p1: &str, expected: &str) {
-        let p = absolute_path(Path::new(p0), Path::new(p1)).unwrap();
-        assert!(p.is_absolute());
-        assert_eq!(p.to_str().unwrap(), expected)
+    #[test]
+    fn relative_path_multiple_components() {
+        check_absolute_path(abs("/aa/bb/cc"), rel("dd/ee"), "/aa/bb/cc/dd/ee", 5)
     }
 
-    fn check_absolute_path_fails(p0: &str, p1: &str) {
-        assert!(absolute_path(Path::new(p0), Path::new(p1)).is_err())
+    mod asserts {
+        use crate::absolute_path;
+
+        use super::helpers::*;
+        use super::platform_helpers::*;
+
+        pub fn check_absolute_path(
+            base_dir: TestPath,
+            path: TestPath,
+            expected_path_str: &str,
+            expected_component_count: usize,
+        ) {
+            let p = absolute_path(from_test_path(base_dir), from_test_path(path)).unwrap();
+            assert!(p.is_absolute());
+            assert_eq!(p, from_test_path(abs(expected_path_str)));
+            assert_eq!(
+                p.to_str().unwrap(),
+                from_test_path(abs(expected_path_str)).to_str().unwrap()
+            );
+            assert_eq!(path_component_count(&p).unwrap(), expected_component_count);
+            assert!(!p.to_str().unwrap().contains(OTHER_SEPARATOR))
+        }
+
+        pub fn check_absolute_path_fails(p0: TestPath, p1: TestPath) {
+            assert!(absolute_path(from_test_path(p0), from_test_path(p1)).is_err())
+        }
+    }
+
+    pub mod helpers {
+        use self::TestPath::*;
+
+        pub enum TestPath {
+            Abs(String),
+            Rel(String),
+        }
+
+        pub fn abs(s: &str) -> TestPath {
+            Abs(String::from(s))
+        }
+
+        pub fn rel(s: &str) -> TestPath {
+            Rel(String::from(s))
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    pub mod platform_helpers {
+        use std::path::Component::*;
+        use std::path::Prefix::*;
+        use std::path::{Path, PathBuf};
+
+        use super::helpers::TestPath::{self, *};
+
+        pub const OTHER_SEPARATOR: char = '/';
+
+        pub fn from_test_path(test_path: TestPath) -> PathBuf {
+            let raw = match test_path {
+                Abs(s) => format!(
+                    "Z:{}",
+                    s.replace('/', &std::path::MAIN_SEPARATOR.to_string())
+                ),
+                Rel(s) => s.replace('/', &std::path::MAIN_SEPARATOR.to_string()),
+            };
+            PathBuf::from(raw)
+        }
+
+        pub fn path_component_count<P: AsRef<Path>>(path: P) -> Option<usize> {
+            let mut iter = path.as_ref().components();
+
+            match iter.next() {
+                Some(Prefix(prefix_component)) => match prefix_component.kind() {
+                    Disk(90) => {}
+                    _ => return None,
+                },
+                _ => return None,
+            };
+
+            match iter.next() {
+                Some(RootDir) => {}
+                _ => return None,
+            };
+
+            let mut n = 0;
+            loop {
+                match iter.next() {
+                    Some(Normal(_)) => n += 1,
+                    Some(_) => return None,
+                    None => return Some(n),
+                }
+            }
+        }
     }
 }
