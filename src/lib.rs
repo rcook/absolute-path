@@ -1,6 +1,6 @@
 use path_clean::clean;
 use std::io::{Error, ErrorKind, Result};
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 
 /// Normalize a target path to an absolute path relative to a base
 /// directory (typically the current working directory) without
@@ -11,6 +11,27 @@ use std::path::{Path, PathBuf};
 /// * `base_dir` - Base directory (must be absolute), typically the current working directory
 /// * `path` - Path
 pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Result<PathBuf> {
+    fn normalize(path: &Path) -> Result<PathBuf> {
+        #[cfg(target_os = "windows")]
+        fn platform_clean(path: &str) -> String {
+            clean(&path.replace(MAIN_SEPARATOR, "/")).replace('/', &MAIN_SEPARATOR.to_string())
+        }
+        #[cfg(not(target_os = "windows"))]
+        fn platform_clean(path: &str) -> String {
+            clean(path)
+        }
+
+        path.to_str()
+            .ok_or_else(|| {
+                Error::new(
+                    ErrorKind::Other,
+                    format!("Path {} cannot be converted to string", path.display()),
+                )
+            })
+            .map(platform_clean)
+            .map(PathBuf::from)
+    }
+
     if !base_dir.as_ref().is_absolute() {
         return Err(Error::new(
             ErrorKind::InvalidInput,
@@ -21,25 +42,10 @@ pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Re
         ));
     }
 
-    let joined = if path.as_ref().components().count() == 0 {
-        base_dir.as_ref().to_path_buf()
-    } else {
-        base_dir.as_ref().join(path)
-    };
-
-    clean_helper(&joined)
-}
-
-fn clean_helper(path: &Path) -> Result<PathBuf> {
-    path.to_str()
-        .ok_or_else(|| {
-            Error::new(
-                ErrorKind::Other,
-                format!("Path {} cannot be converted to string", path.display()),
-            )
-        })
-        .map(clean)
-        .map(PathBuf::from)
+    normalize(&match path.as_ref().components().count() {
+        0 => base_dir.as_ref().to_path_buf(),
+        _ => base_dir.as_ref().join(path),
+    })
 }
 
 #[cfg(test)]
