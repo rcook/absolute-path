@@ -12,18 +12,6 @@ use std::path::{Path, PathBuf};
 /// * `path` - Path
 pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Result<PathBuf> {
     fn normalize(path: &Path) -> Result<PathBuf> {
-        #[cfg(target_os = "windows")]
-        fn platform_clean(path: &str) -> String {
-            use std::path::MAIN_SEPARATOR;
-
-            clean(&path.replace(MAIN_SEPARATOR, "/")).replace('/', &MAIN_SEPARATOR.to_string())
-        }
-
-        #[cfg(not(target_os = "windows"))]
-        fn platform_clean(path: &str) -> String {
-            clean(path)
-        }
-
         path.to_str()
             .ok_or_else(|| {
                 Error::new(
@@ -31,7 +19,7 @@ pub fn absolute_path<B: AsRef<Path>, P: AsRef<Path>>(base_dir: B, path: P) -> Re
                     format!("Path {} cannot be converted to string", path.display()),
                 )
             })
-            .map(platform_clean)
+            .map(clean)
             .map(PathBuf::from)
     }
 
