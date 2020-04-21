@@ -117,7 +117,7 @@ mod tests {
         }
     }
 
-    pub mod helpers {
+    mod helpers {
         use self::TestPath::*;
 
         pub enum TestPath {
@@ -135,7 +135,7 @@ mod tests {
     }
 
     #[cfg(target_os = "windows")]
-    pub mod platform_helpers {
+    mod platform_helpers {
         use std::path::Component::*;
         use std::path::Prefix::*;
         use std::path::{Path, PathBuf};
@@ -183,7 +183,7 @@ mod tests {
     }
 
     #[cfg(not(target_os = "windows"))]
-    pub mod platform_helpers {
+    mod platform_helpers {
         use std::path::Component::*;
         use std::path::{Path, PathBuf};
 
